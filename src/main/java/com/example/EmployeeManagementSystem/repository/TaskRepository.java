@@ -12,4 +12,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     boolean existsByAssignedToAndStatusNot(User user, Status status);
 
     List<Task> findByAssignedTo(User user);
+    List<Task> findByStatus(Status status);
+    List<Task> findByAssignedBy(User user);
 }

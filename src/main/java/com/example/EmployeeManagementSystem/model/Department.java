@@ -1,10 +1,13 @@
 package com.example.EmployeeManagementSystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Setter
@@ -18,10 +21,15 @@ public class Department {
     @Column(name = "dep_id")
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User manager;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "department")
+    private List<User> employees;
 
 }

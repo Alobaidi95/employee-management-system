@@ -19,13 +19,21 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String Action;
+    @Column(nullable = false)
+    private String action;
 
-    private Long performedBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "performed_by")
+    private User performedBy;
 
+    @Column(nullable = false)
     private Long targetId;
 
+    @Column(nullable = false)
     private LocalDateTime timestamp;
+
+    @Column(nullable = false)
+    private String targetType;
 
     @Column(length = 1000)
     private String details;
