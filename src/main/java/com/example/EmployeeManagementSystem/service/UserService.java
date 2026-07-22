@@ -1,9 +1,6 @@
 package com.example.EmployeeManagementSystem.service;
 
-import com.example.EmployeeManagementSystem.dto.request.AssignDepartmentRequest;
-import com.example.EmployeeManagementSystem.dto.request.ChangeRoleRequest;
-import com.example.EmployeeManagementSystem.dto.request.CreateUserRequest;
-import com.example.EmployeeManagementSystem.dto.request.UpdateUserRequest;
+import com.example.EmployeeManagementSystem.dto.request.*;
 import com.example.EmployeeManagementSystem.dto.response.UserResponse;
 import com.example.EmployeeManagementSystem.model.User;
 
@@ -11,7 +8,7 @@ import java.util.List;
 
 public interface UserService{
 
-    UserResponse createUser(CreateUserRequest request);
+    UserResponse createUser(CreateUserRequest request) throws IllegalAccessException;
 
     UserResponse getUserById(Long id);
 
@@ -27,5 +24,6 @@ public interface UserService{
 
     UserResponse assignDepartment (Long id, AssignDepartmentRequest request);
 
+    UserResponse updatePassword (Long id, PasswordChangeRequest request);
 
 }
