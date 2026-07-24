@@ -12,6 +12,7 @@ import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
 import com.example.EmployeeManagementSystem.repository.TaskRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
 import com.example.EmployeeManagementSystem.service.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
@@ -79,14 +80,10 @@ public class UserServiceImpl implements UserService {
         auditLogRepository.save(log);
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public UserResponse createUser(CreateUserRequest request) throws IllegalAccessException {
         User currentUser = getCurrentUser();
-        if(currentUser.getRole() != Role.ADMIN)
-        {
-            throw new UnauthorizedAccessException("you don't have permission to perform this operation");
-        }
         if(userRepository.existsByUsername(request.getUsername()))
         {
            throw new DuplicatedException("Username already exists");
@@ -217,29 +214,21 @@ public class UserServiceImpl implements UserService {
     }
 
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void deleteUser(Long id) {
         User currentUser = getCurrentUser();
-        if (currentUser.getRole() != Role.ADMIN) {
-            throw new UnauthorizedAccessException("You don't have permission to perform this operation");
-        }
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-
         userRepository.delete(user);
-
-        writeAuditLog(currentUser, "DELETE_USER", id, "User",
-                "Deleted user '" + user.getUsername() + "'");
+        writeAuditLog(currentUser, "DELETE_USER", id, "User", "Deleted user '" + user.getUsername() + "'");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public UserResponse changeRole(Long id, ChangeRoleRequest request) {
         User currentUser = getCurrentUser();
-        if (currentUser.getRole() != Role.ADMIN) {
-            throw new UnauthorizedAccessException("You don't have permission to perform this operation");
-        }
+
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -289,13 +278,11 @@ public class UserServiceImpl implements UserService {
         return toUserResponse(updatedUser);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public UserResponse assignDepartment(Long id, AssignDepartmentRequest request) {
-        User currentUser = getCurrentUser();
-        if (currentUser.getRole() != Role.ADMIN) {
-            throw new UnauthorizedAccessException("You don't have permission to perform this operation");
-        }
 
+        User currentUser = getCurrentUser();
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         Department department = departmentRepository.findById(request.getDepartmentId())
