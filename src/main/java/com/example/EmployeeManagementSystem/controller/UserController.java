@@ -17,7 +17,6 @@ public class UserController {
 
     private final UserService userService;
 
-    // ADMIN only (enforced by @PreAuthorize on UserServiceImpl.createUser)
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request)
             throws IllegalAccessException {
