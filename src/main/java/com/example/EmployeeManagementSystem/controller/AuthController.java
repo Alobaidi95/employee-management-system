@@ -8,7 +8,9 @@ import com.example.EmployeeManagementSystem.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,23 +24,26 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private final UserDetailsServiceImpl userDetailsService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        Authentication authResult;
+        try {
+            authResult = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+        } catch (Exception e) {
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        UserDetails userDetails = (UserDetails) authResult.getPrincipal();
 
         String role = userDetails.getAuthorities().iterator().next().getAuthority()
                 .replace("ROLE_", "");
 
-        String token = jwtUtil.generateToken(
-                request.getUsername(), role
-        );
+        String token = jwtUtil.generateToken(request.getUsername(), role);
 
         return ResponseEntity.ok(new AuthResponse(token));
     }

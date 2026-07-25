@@ -188,6 +188,7 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @Override
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         User currentUser = getCurrentUser();
