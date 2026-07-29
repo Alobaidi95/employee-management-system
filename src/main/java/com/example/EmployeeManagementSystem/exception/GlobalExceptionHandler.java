@@ -52,6 +52,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    @ExceptionHandler(InvalidTaskStateException.class)
+    public ResponseEntity<ApiError> handleInvalidTaskState(InvalidTaskStateException ex, HttpServletRequest request) {
+        ApiError body = buildError(HttpStatus.CONFLICT, ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     // ---- Spring Security exceptions ----
 
     // Thrown by authenticationManager.authenticate() on bad login credentials

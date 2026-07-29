@@ -23,19 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Read endpoints (getDepartmentById, getAllDepartments) are open to any
- * authenticated user - department names/rosters aren't sensitive and the
- * frontend will need them for dropdowns etc. All mutating operations are
- * ADMIN-only, matching business rule 5 (single manager per department is
- * an admin-managed invariant).
- *
- * assignManager assumes the target user already holds the MANAGER role
- * (promote them first via UserService.changeRole, then assign here - or
- * just use changeRole's built-in promotion path, which already sets
- * department headship for you). This method is for the "replace a manager"
- * case described in business rule 5.
- */
+
 @Service
 @RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
