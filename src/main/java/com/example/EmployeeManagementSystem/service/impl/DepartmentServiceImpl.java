@@ -5,6 +5,7 @@ import com.example.EmployeeManagementSystem.dto.request.CreateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.response.DepartmentResponse;
 import com.example.EmployeeManagementSystem.exception.DuplicatedException;
+import com.example.EmployeeManagementSystem.exception.InvalidTaskStateException;
 import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
 import com.example.EmployeeManagementSystem.model.AuditLog;
 import com.example.EmployeeManagementSystem.model.Department;
@@ -134,7 +135,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         // Single Manager Constraint (business rule 5)
         if (department.getManager() != null) {
-            throw new IllegalStateException(
+            throw new InvalidTaskStateException(
                     "Department '" + department.getName()
                             + "' already has a manager. Remove the current manager before assigning a new one.");
         }
@@ -143,7 +144,7 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
 
         if (newManager.getRole() != Role.MANAGER) {
-            throw new IllegalStateException(
+            throw new InvalidTaskStateException(
                     "User must already hold the MANAGER role before being assigned to head a department");
         }
 

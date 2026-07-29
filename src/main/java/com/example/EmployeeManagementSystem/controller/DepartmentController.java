@@ -5,6 +5,7 @@ import com.example.EmployeeManagementSystem.dto.request.CreateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.response.DepartmentResponse;
 import com.example.EmployeeManagementSystem.service.DepartmentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class DepartmentController {
 
     // ADMIN only
     @PostMapping
-    public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody CreateDepartmentRequest request) {
+    public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody @Valid CreateDepartmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(departmentService.createDepartment(request));
     }
 
@@ -39,7 +40,7 @@ public class DepartmentController {
 
     // ADMIN only
     @PutMapping("/{id}")
-    public ResponseEntity<DepartmentResponse> updateDepartment(@PathVariable Long id, @RequestBody UpdateDepartmentRequest request) {
+    public ResponseEntity<DepartmentResponse> updateDepartment(@PathVariable Long id, @RequestBody @Valid UpdateDepartmentRequest request) {
         return ResponseEntity.ok(departmentService.updateDepartment(id, request));
     }
 
@@ -52,7 +53,7 @@ public class DepartmentController {
 
     // ADMIN only - fails if department already has a manager (single-manager constraint)
     @PatchMapping("/{id}/manager")
-    public ResponseEntity<DepartmentResponse> assignManager(@PathVariable Long id, @RequestBody AssignManagerRequest request) {
+    public ResponseEntity<DepartmentResponse> assignManager(@PathVariable Long id, @RequestBody @Valid AssignManagerRequest request) {
         return ResponseEntity.ok(departmentService.assignManager(id, request));
     }
 

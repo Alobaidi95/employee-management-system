@@ -4,6 +4,7 @@ import com.example.EmployeeManagementSystem.dto.request.CreateTaskRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateTaskRequest;
 import com.example.EmployeeManagementSystem.dto.response.TaskResponse;
 import com.example.EmployeeManagementSystem.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class TaskController {
 
     // ADMIN -> MANAGER only, MANAGER -> own-department EMPLOYEE only (enforced in service)
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask(@RequestBody CreateTaskRequest request) {
+    public ResponseEntity<TaskResponse> createTask(@RequestBody @Valid CreateTaskRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request));
     }
 
@@ -38,7 +39,7 @@ public class TaskController {
 
     // Assigner or ADMIN only
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id, @RequestBody UpdateTaskRequest request) {
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id, @RequestBody @Valid UpdateTaskRequest request) {
         return ResponseEntity.ok(taskService.updateTask(id, request));
     }
 

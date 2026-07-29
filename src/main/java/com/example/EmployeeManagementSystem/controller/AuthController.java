@@ -5,6 +5,7 @@ import com.example.EmployeeManagementSystem.dto.request.LoginRequest;
 import com.example.EmployeeManagementSystem.dto.response.AuthResponse;
 import com.example.EmployeeManagementSystem.security.JwtUtil;
 import com.example.EmployeeManagementSystem.security.UserDetailsServiceImpl;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,7 +27,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
 
         Authentication authResult;
         try {

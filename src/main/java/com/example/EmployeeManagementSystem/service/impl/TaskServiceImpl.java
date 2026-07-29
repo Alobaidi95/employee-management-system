@@ -89,6 +89,10 @@ public class TaskServiceImpl implements TaskService {
             throw new UnauthorizedAccessException("You don't have permission to assign tasks");
         }
 
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new InvalidTaskStateException("End date cannot be before start date");
+        }
+
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -162,6 +166,10 @@ public class TaskServiceImpl implements TaskService {
                 || currentUser.getId().equals(task.getAssignedBy().getId());
         if (!allowed) {
             throw new UnauthorizedAccessException("Only the assigner or an admin can edit this task");
+        }
+
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new InvalidTaskStateException("End date cannot be before start date");
         }
 
         task.setTitle(request.getTitle());

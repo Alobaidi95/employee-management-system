@@ -2,10 +2,7 @@ package com.example.EmployeeManagementSystem.service.impl;
 
 import com.example.EmployeeManagementSystem.dto.request.*;
 import com.example.EmployeeManagementSystem.dto.response.UserResponse;
-import com.example.EmployeeManagementSystem.exception.DuplicatedException;
-import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
-import com.example.EmployeeManagementSystem.exception.UnMatchedPasswordsException;
-import com.example.EmployeeManagementSystem.exception.UnauthorizedAccessException;
+import com.example.EmployeeManagementSystem.exception.*;
 import com.example.EmployeeManagementSystem.model.*;
 import com.example.EmployeeManagementSystem.repository.AuditLogRepository;
 import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
@@ -203,6 +200,11 @@ public class UserServiceImpl implements UserService {
             throw new UnauthorizedAccessException("You don't have permission to perform this operation");
         }
 
+        if (!user.getEmail().equals(request.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new DuplicatedException("Email already exists");
+        }
+
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
@@ -241,17 +243,17 @@ public class UserServiceImpl implements UserService {
         if (oldRole == Role.EMPLOYEE && newRole == Role.MANAGER) {
             boolean hasActiveTasks = taskRepository.existsByAssignedToAndStatusNot(user, Status.DONE);
             if (hasActiveTasks) {
-                throw new IllegalStateException(
+                throw new InvalidTaskStateException(
                         "Cannot promote user: employee still has active (non-DONE) tasks");
             }
 
             Department department = user.getDepartment();
             if (department == null) {
-                throw new IllegalStateException("Cannot promote user: user has no department assigned");
+                throw new InvalidTaskStateException("Cannot promote user: user has no department assigned");
             }
             // Single Manager Constraint: department must not already have a manager
             if (department.getManager() != null) {
-                throw new IllegalStateException(
+                throw new InvalidTaskStateException(
                         "Cannot promote user: department '" + department.getName()
                                 + "' already has a manager. Remove/replace the current manager first.");
             }
