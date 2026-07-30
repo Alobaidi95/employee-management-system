@@ -5,6 +5,8 @@ import com.example.EmployeeManagementSystem.dto.request.LoginRequest;
 import com.example.EmployeeManagementSystem.dto.response.AuthResponse;
 import com.example.EmployeeManagementSystem.security.JwtUtil;
 import com.example.EmployeeManagementSystem.security.UserDetailsServiceImpl;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "login", description = "APIs for managing logins")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
+    @Operation(summary = "login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
 
         Authentication authResult;
