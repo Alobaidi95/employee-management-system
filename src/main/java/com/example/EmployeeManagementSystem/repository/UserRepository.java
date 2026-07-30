@@ -2,6 +2,8 @@ package com.example.EmployeeManagementSystem.repository;
 
 import com.example.EmployeeManagementSystem.model.Department;
 import com.example.EmployeeManagementSystem.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -16,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+
+    Page<User> findByDepartment(Department department, Pageable pageable);
 }

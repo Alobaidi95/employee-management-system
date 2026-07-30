@@ -4,11 +4,14 @@ import com.example.EmployeeManagementSystem.dto.request.AssignManagerRequest;
 import com.example.EmployeeManagementSystem.dto.request.CreateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.response.DepartmentResponse;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.service.DepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,8 +43,9 @@ public class DepartmentController {
     // any authenticated user
     @GetMapping
     @Operation(summary = "Get all Departments" , description = "returns a list for all departments")
-    public ResponseEntity<List<DepartmentResponse>> getAllDepartments() {
-        return ResponseEntity.ok(departmentService.getAllDepartments());
+    public ResponseEntity<PageResponse<DepartmentResponse>> getAllDepartments(
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(departmentService.getAllDepartments(pageable));
     }
 
     // ADMIN only

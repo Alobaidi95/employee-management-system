@@ -2,20 +2,19 @@ package com.example.EmployeeManagementSystem.service.impl;
 
 import com.example.EmployeeManagementSystem.dto.request.CreateTaskRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateTaskRequest;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.dto.response.TaskResponse;
 import com.example.EmployeeManagementSystem.exception.InvalidTaskStateException;
 import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
 import com.example.EmployeeManagementSystem.exception.UnauthorizedAccessException;
-import com.example.EmployeeManagementSystem.model.AuditLog;
-import com.example.EmployeeManagementSystem.model.Role;
-import com.example.EmployeeManagementSystem.model.Status;
-import com.example.EmployeeManagementSystem.model.Task;
-import com.example.EmployeeManagementSystem.model.User;
+import com.example.EmployeeManagementSystem.model.*;
 import com.example.EmployeeManagementSystem.repository.AuditLogRepository;
 import com.example.EmployeeManagementSystem.repository.TaskRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
 import com.example.EmployeeManagementSystem.service.TaskService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -134,26 +133,24 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public List<TaskResponse> getAllTasks() {
+    public PageResponse<TaskResponse> getAllTasks(Pageable pageable) {
         User currentUser = getCurrentUser();
 
         if (currentUser.getRole() == Role.ADMIN) {
-            return taskRepository.findAll().stream()
-                    .map(this::toResponse)
-                    .collect(Collectors.toList());
+            Page<TaskResponse> page = taskRepository.findAll(pageable).map(this::toResponse);
+            return PageResponse.from(page);
         }
 
         if (currentUser.getRole() == Role.MANAGER) {
-            return taskRepository.findAll().stream()
-                    .filter(t -> currentUser.getId().equals(t.getAssignedBy().getId())
-                            || sameDepartment(currentUser, t.getAssignedTo()))
-                    .map(this::toResponse)
-                    .collect(Collectors.toList());
+            Department dept = currentUser.getDepartment();
+            Page<Task> taskPage = dept != null
+                    ? taskRepository.findVisibleToManager(currentUser, dept, pageable)
+                    : taskRepository.findByAssignedBy(currentUser, pageable);
+            return PageResponse.from(taskPage.map(this::toResponse));
         }
 
-        return taskRepository.findByAssignedTo(currentUser).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        Page<TaskResponse> page = taskRepository.findByAssignedTo(currentUser, pageable).map(this::toResponse);
+        return PageResponse.from(page);
     }
 
     @Override

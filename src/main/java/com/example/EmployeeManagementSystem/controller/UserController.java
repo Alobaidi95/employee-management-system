@@ -1,12 +1,15 @@
 package com.example.EmployeeManagementSystem.controller;
 
 import com.example.EmployeeManagementSystem.dto.request.*;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.dto.response.UserResponse;
 import com.example.EmployeeManagementSystem.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,8 +48,9 @@ public class UserController {
     // ADMIN: all users. MANAGER: own department. EMPLOYEE: just themselves.
     @GetMapping
     @Operation(summary = "Get all users", description = "Retrieves a paginated list of all registered users in the system.")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<PageResponse<UserResponse>> getAllUsers(
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
     // ADMIN or MANAGER (department-match enforced inside the service)
@@ -58,6 +62,7 @@ public class UserController {
 
     // ADMIN only
     @DeleteMapping("/{id}")
+    @Operation(summary = "delete a user")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

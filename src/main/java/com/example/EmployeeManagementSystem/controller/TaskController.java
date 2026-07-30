@@ -2,12 +2,15 @@ package com.example.EmployeeManagementSystem.controller;
 
 import com.example.EmployeeManagementSystem.dto.request.CreateTaskRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateTaskRequest;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.dto.response.TaskResponse;
 import com.example.EmployeeManagementSystem.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,8 +42,9 @@ public class TaskController {
 
     @GetMapping
     @Operation(summary = "Get all tasks")
-    public ResponseEntity<List<TaskResponse>> getAllTasks() {
-        return ResponseEntity.ok(taskService.getAllTasks());
+    public ResponseEntity<PageResponse<TaskResponse>> getAllTasks(
+            @PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
+        return ResponseEntity.ok(taskService.getAllTasks(pageable));
     }
 
     // Assigner or ADMIN only

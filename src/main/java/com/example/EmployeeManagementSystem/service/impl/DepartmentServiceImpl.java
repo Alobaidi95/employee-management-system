@@ -4,6 +4,7 @@ import com.example.EmployeeManagementSystem.dto.request.AssignManagerRequest;
 import com.example.EmployeeManagementSystem.dto.request.CreateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.request.UpdateDepartmentRequest;
 import com.example.EmployeeManagementSystem.dto.response.DepartmentResponse;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.exception.DuplicatedException;
 import com.example.EmployeeManagementSystem.exception.InvalidTaskStateException;
 import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
@@ -16,6 +17,8 @@ import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
 import com.example.EmployeeManagementSystem.service.DepartmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -86,10 +89,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public List<DepartmentResponse> getAllDepartments() {
-        return departmentRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public PageResponse<DepartmentResponse> getAllDepartments(Pageable pageable) {
+        Page<DepartmentResponse> page = departmentRepository.findAll(pageable).map(this::toResponse);
+        return PageResponse.from(page);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

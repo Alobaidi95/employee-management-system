@@ -1,6 +1,7 @@
 package com.example.EmployeeManagementSystem.service.impl;
 
 import com.example.EmployeeManagementSystem.dto.request.*;
+import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.dto.response.UserResponse;
 import com.example.EmployeeManagementSystem.exception.*;
 import com.example.EmployeeManagementSystem.model.*;
@@ -9,6 +10,9 @@ import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
 import com.example.EmployeeManagementSystem.repository.TaskRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
 import com.example.EmployeeManagementSystem.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -159,30 +163,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
+    public PageResponse<UserResponse> getAllUsers(Pageable pageable) {
         User currentUser = getCurrentUser();
         Role role = currentUser.getRole();
 
         if (role == Role.ADMIN) {
-            return userRepository.findAll()
-                    .stream()
-                    .map(this::toUserResponse)
-                    .collect(Collectors.toList());
+            Page<UserResponse> page = userRepository.findAll(pageable).map(this::toUserResponse);
+            return PageResponse.from(page);
         }
 
         if (role == Role.MANAGER) {
             Department dept = currentUser.getDepartment();
             if (dept == null) {
-                return List.of();
+                return PageResponse.from(Page.empty(pageable));
             }
-            return userRepository.findByDepartment(dept)
-                    .stream()
-                    .map(this::toUserResponse)
-                    .collect(Collectors.toList());
+            Page<UserResponse> page = userRepository.findByDepartment(dept, pageable).map(this::toUserResponse);
+            return PageResponse.from(page);
         }
 
-        return List.of(toUserResponse(currentUser));
-
+        // EMPLOYEE: only themselves - a manually built single-item "page"
+        Page<UserResponse> page = new PageImpl<>(List.of(toUserResponse(currentUser)), pageable, 1);
+        return PageResponse.from(page);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
