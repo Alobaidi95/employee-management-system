@@ -1,0 +1,23 @@
+## Copy this file to application.properties (same folder) and fill in
+## real values. application.properties is gitignored on purpose - this
+## file exists so anyone cloning the repo (including CI) knows exactly
+## what config is required to run the app.
+
+spring.application.name=EmployeeManagementSystem
+
+
+spring.datasource.url=jdbc:mysql://localhost:8889/employee
+spring.datasource.username=root
+spring.datasource.password=replace-with-your-local-mysql-password
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+## Generate a real key with: openssl rand -base64 32
+## ${JWT_SECRET:...} reads from an environment variable named JWT_SECRET
+## if one is set, and falls back to the placeholder after the colon if
+## it isn't. Convenient for local dev; set a real JWT_SECRET env var
+## anywhere this app runs outside your own machine (CI, servers, etc).
+jwt.secret=${JWT_SECRET:replace-with-a-real-base64-encoded-256-bit-key}
+jwt.expiration=3600000

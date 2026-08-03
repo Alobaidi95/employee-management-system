@@ -8,13 +8,11 @@ import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.exception.DuplicatedException;
 import com.example.EmployeeManagementSystem.exception.InvalidTaskStateException;
 import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
-import com.example.EmployeeManagementSystem.model.AuditLog;
-import com.example.EmployeeManagementSystem.model.Department;
-import com.example.EmployeeManagementSystem.model.Role;
-import com.example.EmployeeManagementSystem.model.User;
+import com.example.EmployeeManagementSystem.model.*;
 import com.example.EmployeeManagementSystem.repository.AuditLogRepository;
 import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
+import com.example.EmployeeManagementSystem.service.AuditLogService;
 import com.example.EmployeeManagementSystem.service.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +32,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -42,16 +40,6 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
     }
 
-    private void writeAuditLog(User performedBy, String action, Long targetId, String targetType, String details) {
-        AuditLog log = new AuditLog();
-        log.setAction(action);
-        log.setPerformedBy(performedBy);
-        log.setTargetId(targetId);
-        log.setTargetType(targetType);
-        log.setDetails(details != null && details.length() > 1000 ? details.substring(0, 1000) : details);
-        log.setTimestamp(LocalDateTime.now());
-        auditLogRepository.save(log);
-    }
 
     private DepartmentResponse toResponse(Department department) {
         return DepartmentResponse.builder()
@@ -75,8 +63,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         department.setName(request.getName());
         Department saved = departmentRepository.save(department);
 
-        writeAuditLog(currentUser, "CREATE_DEPARTMENT", saved.getId(), "Department",
+        auditLogService.record(currentUser, "CREATE_DEPARTMENT", saved.getId(), AuditTargetType.DEPARTMENT,
                 "Created department '" + saved.getName() + "'");
+
 
         return toResponse(saved);
     }
@@ -109,8 +98,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         department.setName(request.getName());
         Department updated = departmentRepository.save(department);
 
-        writeAuditLog(currentUser, "UPDATE_DEPARTMENT", updated.getId(), "Department",
+        auditLogService.record(currentUser, "UPDATE_DEPARTMENT", updated.getId(), AuditTargetType.DEPARTMENT,
                 "Renamed department to '" + updated.getName() + "'");
+
 
         return toResponse(updated);
     }
@@ -122,9 +112,20 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
 
+
+        // block the deletion if the department has employees assigned to it.
+        // admin need to reassign them explicitly first.
+        List<User> employees = userRepository.findByDepartment(department);
+        if (!employees.isEmpty()) {
+            throw new InvalidTaskStateException(
+                    "Cannot delete department '" + department.getName() + "': it still has "
+                            + employees.size() + " employee(s) assigned. Reassign them first.");
+        }
+
+        //delete the department
         departmentRepository.delete(department);
 
-        writeAuditLog(currentUser, "DELETE_DEPARTMENT", id, "Department",
+        auditLogService.record(currentUser, "DELETE_DEPARTMENT", id, AuditTargetType.DEPARTMENT,
                 "Deleted department '" + department.getName() + "'");
     }
 
@@ -135,7 +136,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + departmentId));
 
-        // Single Manager Constraint (business rule 5)
+        // Single Manager Constraint
         if (department.getManager() != null) {
             throw new InvalidTaskStateException(
                     "Department '" + department.getName()
@@ -153,7 +154,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         department.setManager(newManager);
         Department updated = departmentRepository.save(department);
 
-        writeAuditLog(currentUser, "ASSIGN_MANAGER", updated.getId(), "Department",
+        auditLogService.record(currentUser, "ASSIGN_MANAGER", updated.getId(), AuditTargetType.DEPARTMENT,
                 "Assigned '" + newManager.getUsername() + "' as manager of '" + updated.getName() + "'");
 
         return toResponse(updated);
@@ -170,7 +171,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         department.setManager(null);
         Department updated = departmentRepository.save(department);
 
-        writeAuditLog(currentUser, "REMOVE_MANAGER", updated.getId(), "Department",
+        auditLogService.record(currentUser, "REMOVE_MANAGER", updated.getId(), AuditTargetType.DEPARTMENT,
                 "Removed manager" + (previousManagerUsername != null ? " '" + previousManagerUsername + "'" : "")
                         + " from '" + updated.getName() + "'");
 

@@ -5,10 +5,10 @@ import com.example.EmployeeManagementSystem.dto.response.PageResponse;
 import com.example.EmployeeManagementSystem.dto.response.UserResponse;
 import com.example.EmployeeManagementSystem.exception.*;
 import com.example.EmployeeManagementSystem.model.*;
-import com.example.EmployeeManagementSystem.repository.AuditLogRepository;
 import com.example.EmployeeManagementSystem.repository.DepartmentRepository;
 import com.example.EmployeeManagementSystem.repository.TaskRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
+import com.example.EmployeeManagementSystem.service.AuditLogService;
 import com.example.EmployeeManagementSystem.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -19,10 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +30,7 @@ public class UserServiceImpl implements UserService {
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final TaskRepository taskRepository;
-    private final AuditLogRepository  auditLogRepository;
+    private final AuditLogService auditLogService;
 
 
     private UserResponse toUserResponse(User user)
@@ -67,19 +65,7 @@ public class UserServiceImpl implements UserService {
                         "Authenticated user not found"));
     }
 
-    private void writeAuditLog(User performedBy, String action, Long targetId,
-                               String targetType, String details) {
-        AuditLog log = new AuditLog();
-        log.setAction(action);
-        log.setPerformedBy(performedBy);
-        log.setTargetId(targetId);
-        log.setTargetType(targetType);
-        log.setDetails(details != null && details.length() > 1000
-                ? details.substring(0, 1000)
-                : details);
-        log.setTimestamp(LocalDateTime.now());
-        auditLogRepository.save(log);
-    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @Override
@@ -104,7 +90,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(newUser);
 
-        writeAuditLog(currentUser, "CREATE_USER", savedUser.getId(), "User",
+        auditLogService.record(currentUser, "CREATE_USER", savedUser.getId(), AuditTargetType.USER,
                 "Created user '" + savedUser.getUsername() + "' with role " + savedUser.getRole());
 
         return toUserResponse(savedUser);
@@ -211,7 +197,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         User updatedUser = userRepository.save(user);
 
-        writeAuditLog(currentUser, "UPDATE_USER", updatedUser.getId(), "User",
+        auditLogService.record(currentUser, "UPDATE_USER", updatedUser.getId(), AuditTargetType.USER,
                 "Updated profile for user '" + updatedUser.getUsername() + "'");
 
         return toUserResponse(updatedUser);
@@ -224,8 +210,30 @@ public class UserServiceImpl implements UserService {
         User currentUser = getCurrentUser();
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        // block if the user role is manager and he is leading a department , Admin need to change his role first .
+        if (user.getDepartment() != null && user.getDepartment().getManager() != null
+                && user.getDepartment().getManager().getId().equals(user.getId())) {
+            throw new InvalidTaskStateException(
+                    "Cannot delete user: they are currently heading department '"
+                            + user.getDepartment().getName() + "'. Remove them as manager first.");
+        }
+
+        //delete all tasks related to this user.
+        List<Task> tasksAssignedToUser = taskRepository.findByAssignedTo(user);
+        List<Task> tasksAssignedByUser = taskRepository.findByAssignedBy(user);
+        int deletedTaskCount = tasksAssignedToUser.size() + tasksAssignedByUser.size();
+
+        taskRepository.deleteAll(tasksAssignedToUser);
+        taskRepository.deleteAll(tasksAssignedByUser);
+
+        //delete the user
         userRepository.delete(user);
-        writeAuditLog(currentUser, "DELETE_USER", id, "User", "Deleted user '" + user.getUsername() + "'");
+
+        //log it , and show a count of his total tasks that was deleted with him.
+        auditLogService.record(currentUser, "DELETE_USER", id, AuditTargetType.USER,
+                "Deleted user '" + user.getUsername() + "' along with " + deletedTaskCount + " associated task(s)");
+
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -276,7 +284,7 @@ public class UserServiceImpl implements UserService {
         user.setRole(newRole);
         User updatedUser = userRepository.save(user);
 
-        writeAuditLog(currentUser, "CHANGE_ROLE", updatedUser.getId(), "User",
+        auditLogService.record(currentUser, "CHANGE_ROLE", updatedUser.getId(), AuditTargetType.USER,
                 "Changed role of user '" + updatedUser.getUsername() + "' from " + oldRole + " to " + newRole);
 
         return toUserResponse(updatedUser);
@@ -296,7 +304,7 @@ public class UserServiceImpl implements UserService {
         user.setDepartment(department);
         User updatedUser = userRepository.save(user);
 
-        writeAuditLog(currentUser, "ASSIGN_DEPARTMENT", updatedUser.getId(), "User",
+        auditLogService.record(currentUser, "ASSIGN_DEPARTMENT", updatedUser.getId(), AuditTargetType.USER,
                 "Assigned user '" + updatedUser.getUsername() + "' to department '" + department.getName() + "'");
 
         return toUserResponse(updatedUser);
@@ -325,7 +333,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         if (!isSelf) {
-            writeAuditLog(currentUser, "RESET_PASSWORD", updatedUser.getId(), "User",
+            auditLogService.record(currentUser, "RESET_PASSWORD", updatedUser.getId(), AuditTargetType.USER,
                     "Admin reset password for user '" + updatedUser.getUsername() + "'");
         }
 

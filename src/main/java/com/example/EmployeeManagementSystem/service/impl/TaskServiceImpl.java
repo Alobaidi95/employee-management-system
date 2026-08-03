@@ -8,9 +8,9 @@ import com.example.EmployeeManagementSystem.exception.InvalidTaskStateException;
 import com.example.EmployeeManagementSystem.exception.ResourceNotFoundException;
 import com.example.EmployeeManagementSystem.exception.UnauthorizedAccessException;
 import com.example.EmployeeManagementSystem.model.*;
-import com.example.EmployeeManagementSystem.repository.AuditLogRepository;
 import com.example.EmployeeManagementSystem.repository.TaskRepository;
 import com.example.EmployeeManagementSystem.repository.UserRepository;
+import com.example.EmployeeManagementSystem.service.AuditLogService;
 import com.example.EmployeeManagementSystem.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,9 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+
 
 
 @Service
@@ -29,7 +27,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -37,16 +35,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
     }
 
-    private void writeAuditLog(User performedBy, String action, Long targetId, String targetType, String details) {
-        AuditLog log = new AuditLog();
-        log.setAction(action);
-        log.setPerformedBy(performedBy);
-        log.setTargetId(targetId);
-        log.setTargetType(targetType);
-        log.setDetails(details != null && details.length() > 1000 ? details.substring(0, 1000) : details);
-        log.setTimestamp(LocalDateTime.now());
-        auditLogRepository.save(log);
-    }
+
 
     private TaskResponse toResponse(Task task) {
         return TaskResponse.builder()
@@ -103,8 +92,9 @@ public class TaskServiceImpl implements TaskService {
 
         Task saved = taskRepository.save(task);
 
-        writeAuditLog(currentUser, "CREATE_TASK", saved.getId(), "Task",
+        auditLogService.record(currentUser, "CREATE_TASK", saved.getId(), AuditTargetType.TASK,
                 "Assigned task '" + saved.getTitle() + "' to '" + assignedTo.getUsername() + "'");
+
 
         return toResponse(saved);
     }
@@ -175,7 +165,7 @@ public class TaskServiceImpl implements TaskService {
         task.setEndDate(request.getEndDate());
         Task updated = taskRepository.save(task);
 
-        writeAuditLog(currentUser, "UPDATE_TASK", updated.getId(), "Task",
+        auditLogService.record(currentUser, "UPDATE_TASK", updated.getId(), AuditTargetType.TASK,
                 "Updated task '" + updated.getTitle() + "'");
 
         return toResponse(updated);
@@ -215,7 +205,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task updated = transition(task, Status.ASSIGNED, Status.STARTED, "start");
 
-        writeAuditLog(currentUser, "START_TASK", updated.getId(), "Task",
+        auditLogService.record(currentUser, "START_TASK", updated.getId(), AuditTargetType.TASK,
                 "Started task '" + updated.getTitle() + "'");
 
         return toResponse(updated);
@@ -232,7 +222,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task updated = transition(task, Status.STARTED, Status.UNDER_REVIEW, "submit for review");
 
-        writeAuditLog(currentUser, "SUBMIT_TASK_FOR_REVIEW", updated.getId(), "Task",
+        auditLogService.record(currentUser, "SUBMIT_TASK_FOR_REVIEW", updated.getId(), AuditTargetType.TASK,
                 "Submitted task '" + updated.getTitle() + "' for review");
 
         return toResponse(updated);
@@ -249,7 +239,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task updated = transition(task, Status.UNDER_REVIEW, Status.DONE, "approve");
 
-        writeAuditLog(currentUser, "APPROVE_TASK", updated.getId(), "Task",
+        auditLogService.record(currentUser, "APPROVE_TASK", updated.getId(), AuditTargetType.TASK,
                 "Approved task '" + updated.getTitle() + "'");
 
         return toResponse(updated);
@@ -266,7 +256,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task updated = transition(task, Status.UNDER_REVIEW, Status.ASSIGNED, "reject");
 
-        writeAuditLog(currentUser, "REJECT_TASK", updated.getId(), "Task",
+        auditLogService.record(currentUser, "REJECT_TASK", updated.getId(), AuditTargetType.TASK,
                 "Rejected task '" + updated.getTitle() + "' - sent back to " + updated.getAssignedTo().getUsername());
 
         return toResponse(updated);
@@ -286,6 +276,7 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.delete(task);
 
-        writeAuditLog(currentUser, "DELETE_TASK", id, "Task", "Deleted task '" + task.getTitle() + "'");
+        auditLogService.record(currentUser, "DELETE_TASK", id, AuditTargetType.TASK,
+                "Deleted task '" + task.getTitle() + "'");
     }
 }

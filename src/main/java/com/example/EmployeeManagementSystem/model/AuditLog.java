@@ -32,8 +32,9 @@ public class AuditLog {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String targetType;
+    private AuditTargetType targetType;
 
     @Column(length = 1000)
     private String details;
