@@ -1,0 +1,38 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: employee
+    ports:
+      - "8889:3306"   # host:container - lets you still connect from your Mac (e.g. a GUI DB tool) on the same port you're used to
+    volumes:
+      - mysql_data:/var/lib/mysql   # persists data on your machine, outside the container's own filesystem
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .        # build from the Dockerfile in this directory, rather than pulling a pre-built image
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # the hostname: "mysql-db" is the SERVICE NAME above, not
+      # localhost. Compose's internal DNS resolves it to the right
+      # container automatically.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/employee
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: 3600000
+    depends_on:
+      mysql-db:
+        condition: service_healthy   # wait for the healthcheck above to pass, not just for the container to start
+
+volumes:
+  mysql_data:   # declares the named volume used above - Docker manages where this actually lives on disk
