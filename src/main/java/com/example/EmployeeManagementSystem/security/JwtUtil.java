@@ -1,17 +1,14 @@
 package com.example.EmployeeManagementSystem.security;
 
-import com.example.EmployeeManagementSystem.model.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.util.Date;
 
@@ -43,7 +40,7 @@ public class JwtUtil {
 
     }
 
-    private Claims exractAllClaims(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(getSigningKey())
                 .build()
@@ -53,18 +50,18 @@ public class JwtUtil {
 
 
     public String extractUsername(String token) {
-        return exractAllClaims(token).getSubject();
+        return extractAllClaims(token).getSubject();
     }
 
 
     private String extractRole(String token) {
-        return exractAllClaims(token).get("role").toString();
+        return extractAllClaims(token).get("role").toString();
     }
 
     public boolean isTokenValid(String token) {
         try
         {
-            exractAllClaims(token);
+            extractAllClaims(token);
             return true;
         }
         catch (JwtException | IllegalArgumentException e)

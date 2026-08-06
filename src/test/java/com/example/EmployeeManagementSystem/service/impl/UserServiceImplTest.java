@@ -82,8 +82,8 @@ class UserServiceImplTest {
 
         employeeSameDept = new User();
         employeeSameDept.setId(3L);
-        employeeSameDept.setUsername("jdoe");
-        employeeSameDept.setEmail("jdoe@example.com");
+        employeeSameDept.setUsername("john");
+        employeeSameDept.setEmail("john@example.com");
         employeeSameDept.setRole(Role.EMPLOYEE);
         employeeSameDept.setDepartment(engineering);
 
@@ -190,7 +190,7 @@ class UserServiceImplTest {
 
             UserResponse response = userService.getUserById(3L);
 
-            assertThat(response.getUsername()).isEqualTo("jdoe");
+            assertThat(response.getUsername()).isEqualTo("john");
         }
 
         @Test
@@ -209,7 +209,7 @@ class UserServiceImplTest {
 
             UserResponse response = userService.getUserById(3L);
 
-            assertThat(response.getUsername()).isEqualTo("jdoe");
+            assertThat(response.getUsername()).isEqualTo("john");
         }
 
         @Test
@@ -295,7 +295,7 @@ class UserServiceImplTest {
 
             assertThat(result.getContent())
                     .extracting(UserResponse::getUsername)
-                    .containsExactlyInAnyOrder("msmith", "jdoe");
+                    .containsExactlyInAnyOrder("msmith", "john");
         }
 
         @Test
@@ -320,7 +320,7 @@ class UserServiceImplTest {
             PageResponse<UserResponse> result = userService.getAllUsers(pageable);
 
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0).getUsername()).isEqualTo("jdoe");
+            assertThat(result.getContent().get(0).getUsername()).isEqualTo("john");
         }
     }
 
