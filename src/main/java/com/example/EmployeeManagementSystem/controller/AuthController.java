@@ -4,7 +4,6 @@ package com.example.EmployeeManagementSystem.controller;
 import com.example.EmployeeManagementSystem.dto.request.LoginRequest;
 import com.example.EmployeeManagementSystem.dto.response.AuthResponse;
 import com.example.EmployeeManagementSystem.security.JwtUtil;
-import com.example.EmployeeManagementSystem.security.UserDetailsServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

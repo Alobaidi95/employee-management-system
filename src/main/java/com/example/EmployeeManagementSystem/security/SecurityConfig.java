@@ -53,8 +53,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Add your actual frontend origin(s) here. Update this list once
-        // you know your dev server's port and your deployed frontend's URL.
+
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "http://localhost:5173"

@@ -88,6 +88,13 @@ public class UserServiceImpl implements UserService {
         newUser.setFirstName(request.getFirstName());
         newUser.setLastName(request.getLastName());
 
+        if (request.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Department not found with id: " + request.getDepartmentId()));
+            newUser.setDepartment(department);
+        }
+
         User savedUser = userRepository.save(newUser);
 
         auditLogService.record(currentUser, "CREATE_USER", savedUser.getId(), AuditTargetType.USER,

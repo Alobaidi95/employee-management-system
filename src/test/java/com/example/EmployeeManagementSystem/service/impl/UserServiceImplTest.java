@@ -118,6 +118,32 @@ class UserServiceImplTest {
         void succeeds_whenCalledByAdmin() throws IllegalAccessException {
             authenticateAs(admin);
             CreateUserRequest request = new CreateUserRequest(
+                    "newuser", "rawpassword", "new@example.com", "New", "User", Role.EMPLOYEE, engineering.getId());
+
+            when(userRepository.existsByUsername("newuser")).thenReturn(false);
+            when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+            when(passwordEncoder.encode("rawpassword")).thenReturn("hashed");
+            when(departmentRepository.findById(engineering.getId())).thenReturn(Optional.of(engineering));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+                User u = inv.getArgument(0);
+                u.setId(99L);
+                return u;
+            });
+
+            UserResponse response = userService.createUser(request);
+
+            assertThat(response.getUsername()).isEqualTo("newuser");
+            assertThat(response.getRole()).isEqualTo(Role.EMPLOYEE);
+            assertThat(response.getDepartmentName()).isEqualTo("Engineering");
+            verify(userRepository).save(argThat(u ->
+                    u.getPassword().equals("hashed") && u.getDepartment() == engineering));
+            verify(auditLogService).record(eq(admin), anyString(), eq(99L), eq(AuditTargetType.USER), anyString());
+        }
+
+        @Test
+        void leavesDepartmentNull_whenDepartmentIdOmitted() throws IllegalAccessException {
+            authenticateAs(admin);
+            CreateUserRequest request = new CreateUserRequest(
                     "newuser", "rawpassword", "new@example.com", "New", "User", Role.EMPLOYEE, null);
 
             when(userRepository.existsByUsername("newuser")).thenReturn(false);
@@ -131,10 +157,24 @@ class UserServiceImplTest {
 
             UserResponse response = userService.createUser(request);
 
-            assertThat(response.getUsername()).isEqualTo("newuser");
-            assertThat(response.getRole()).isEqualTo(Role.EMPLOYEE);
-            verify(userRepository).save(argThat(u -> u.getPassword().equals("hashed")));
-            verify(auditLogService).record(eq(admin), anyString(), eq(99L), eq(AuditTargetType.USER), anyString());
+            assertThat(response.getDepartmentName()).isNull();
+            verify(departmentRepository, never()).findById(any());
+        }
+
+        @Test
+        void throwsNotFound_whenDepartmentIdDoesNotExist() {
+            authenticateAs(admin);
+            CreateUserRequest request = new CreateUserRequest(
+                    "newuser", "rawpassword", "new@example.com", "New", "User", Role.EMPLOYEE, 404L);
+
+            when(userRepository.existsByUsername("newuser")).thenReturn(false);
+            when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+            when(departmentRepository.findById(404L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.createUser(request))
+                    .isInstanceOf(ResourceNotFoundException.class);
+
+            verify(userRepository, never()).save(any());
         }
 
         @Test
