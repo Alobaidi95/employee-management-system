@@ -1,11 +1,12 @@
 import axios from "axios";
 
-// Every request goes to the Spring Boot backend. In dev, that's
-// localhost:8080 (matches the docker-compose.yml port mapping). We'll
-// make this configurable via an env variable once we get to deployment -
-// hardcoded for now since we're only running locally.
+// VITE_API_URL is baked in at BUILD time, not runtime - Vite only exposes
+// env vars prefixed with VITE_ to client code, and it substitutes them
+// when `npm run build` runs, not when the resulting container later
+// starts. Falls back to localhost for local `npm run dev`, where no env
+// var is set at all.
 const apiClient = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8080/api",
 });
 
 // Runs before every outgoing request. Reads the JWT from localStorage (if
