@@ -1,4 +1,3 @@
-import type { Role } from "./auth";
 
 // Matches AuditLogResponse.java. targetType mirrors your backend's
 // AuditTargetType enum (USER, DEPARTMENT, TASK).
