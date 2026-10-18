@@ -326,6 +326,10 @@ public class UserServiceImpl implements UserService {
         boolean isSelf = currentUser.getId().equals(user.getId());
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
 
+        if ("demo".equalsIgnoreCase(currentUser.getUsername())) {
+            throw new UnauthorizedAccessException("You can't change the password of this demo account");
+        }
+
         if (!isSelf && !isAdmin) {
             throw new UnauthorizedAccessException("You don't have permission to perform this operation");
         }

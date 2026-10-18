@@ -13,7 +13,7 @@ RUN mvn dependency:go-offline -B
 
  # Now copy the actual source and build the jar.
  # -DskipTests: this Dockerfile builds the app, it doesn't run the test
- # suite - that's CI's job (your GitHub Actions workflow already does that
+ # suite - that's CI's job (GitHub Actions workflow already does that
  # on every push). Running tests again here just slows down every build.
 COPY src ./src
 RUN mvn clean package -DskipTests -B

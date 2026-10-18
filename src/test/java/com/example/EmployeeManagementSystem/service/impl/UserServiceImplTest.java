@@ -557,6 +557,18 @@ class UserServiceImplTest {
         }
 
         @Test
+        void demoAccountCannotChangeItsOwnPassword() {
+            employeeSameDept.setUsername("demo");
+            authenticateAs(employeeSameDept);
+            when(userRepository.findById(3L)).thenReturn(Optional.of(employeeSameDept));
+
+            assertThatThrownBy(() -> userService.updatePassword(3L, new PasswordChangeRequest("demo123", "newpw")))
+                    .isInstanceOf(UnauthorizedAccessException.class);
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
         void selfChangeFails_whenOldPasswordWrong() {
             authenticateAs(employeeSameDept);
             employeeSameDept.setPassword("hashed-old");

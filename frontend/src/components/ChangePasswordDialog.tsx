@@ -20,6 +20,7 @@ interface ChangePasswordDialogProps {
 
 export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProps) {
   const { user: currentUser } = useAuth();
+  const isDemo = currentUser?.username.toLowerCase() === "demo";
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -48,14 +49,10 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     setIsSubmitting(true);
 
     try {
-      // The JWT never carries a numeric user id (only username + role),
-      // so we look up our own record first purely to get the id the
-      // PATCH endpoint requires in its URL.
       const profile = await getUserByUsername(currentUser.username);
       await changePassword(profile.id, { oldPassword: currentPassword, newPassword });
       setSucceeded(true);
     } catch (err: any) {
-      // Backend returns "Old passwords don't match" via UnMatchedPasswordsException
       setError(err?.response?.data?.message ?? "Something went wrong changing your password.");
     } finally {
       setIsSubmitting(false);
@@ -66,7 +63,11 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ fontWeight: 600 }}>Change password</DialogTitle>
       <DialogContent>
-        {succeeded ? (
+        {isDemo ? (
+          <Alert severity="info" sx={{ mt: 1 }}>
+            You can't change the password of this demo account.
+          </Alert>
+        ) : succeeded ? (
           <Alert severity="success" sx={{ mt: 1 }}>
             Your password has been updated.
           </Alert>
@@ -102,9 +103,9 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        {succeeded ? (
+        {isDemo || succeeded ? (
           <Button variant="contained" onClick={onClose} sx={{ textTransform: "none", fontWeight: 600 }}>
-            Done
+            {isDemo ? "Close" : "Done"}
           </Button>
         ) : (
           <>
